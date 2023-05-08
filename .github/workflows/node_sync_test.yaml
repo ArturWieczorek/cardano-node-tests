@@ -56,7 +56,7 @@ jobs:
         uses: zegocover/buildkite-pipeline-action@master
         with:
           access_token: '${{ secrets.BUILDKITE_API_ACCESS_TOKEN }}'
-          pipeline: 'input-output-hk/qa-sync-tests'
+          pipeline: 'input-output-hk/awiecz-node-sync'
           message: ':github: Triggered by GitHub Action'
           env: '{
           "env":"mainnet",
@@ -84,8 +84,6 @@ jobs:
         env: [preview, preprod]
         cabal: ["3.8.1.0"]
         ghc: ["8.10.7"]
-        branch:
-          - sync_tests_release_8
       fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 600

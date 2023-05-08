@@ -7,6 +7,7 @@ import re
 import shlex
 import shutil
 import signal
+import fileinput
 import subprocess
 
 import requests
@@ -149,7 +150,7 @@ def get_node_config_files(env, node_topology_type):
     print(f"current_directory: {current_directory}")
     print("Getting the config.json file...")
     urllib.request.urlretrieve(
-        "https://raw.githubusercontent.com/ArturWieczorek/node-topology-files/main/" + env + "/config.json", "config.json",
+        "https://raw.githubusercontent.com/ArturWieczorek/node-config-files/main/" + env + "/config.json", "config.json",
     )
     print("Getting the byron-genesis.json file...")
     urllib.request.urlretrieve(
@@ -165,7 +166,7 @@ def get_node_config_files(env, node_topology_type):
     )
     print("Getting the conway-genesis.json file...")
     urllib.request.urlretrieve(
-        "https://raw.githubusercontent.com/ArturWieczorek/node-topology-files/main/"  + env + "/conway-genesis.json", "conway-genesis.json",
+        "https://raw.githubusercontent.com/ArturWieczorek/node-config-files/main/"  + env + "/conway-genesis.json", "conway-genesis.json",
     )
     if node_topology_type == "p2p":
         print("Creating the topology.json file...")
@@ -174,7 +175,7 @@ def get_node_config_files(env, node_topology_type):
     else:
         print("Getting the topology.json file...")
         urllib.request.urlretrieve(
-            "https://raw.githubusercontent.com/ArturWieczorek/node-topology-files/main/" + env + "/topology.json", "topology.json",
+            "https://book.world.dev.cardano.org/environments/" + env + "/topology.json", "topology.json",
             )
     print(f" - listdir current_directory: {os.listdir(current_directory)}")
 
@@ -818,11 +819,14 @@ def get_node_files_using_cabal(node_rev, repository = None):
         repo = git_clone_iohk_repo(repo_name, repo_dir, node_rev)
 
     cabal_local_file = Path(ROOT_TEST_PATH) / 'sync_tests' / 'cabal.project.local'
-    cabal_project_file = Path(ROOT_TEST_PATH) / 'sync_tests' / 'cabal.project'
+    #cabal_project_file = Path(ROOT_TEST_PATH) / 'sync_tests' / 'cabal.project'
     shutil.copy2(cabal_local_file , Path(repo_dir))   
-    shutil.copy2(cabal_project_file , Path(repo_dir))   
+    #shutil.copy2(cabal_project_file , Path(repo_dir))   
     os.chdir(Path(repo_dir))
     print(f" - listdir repo_dir: {os.listdir(repo_dir)}") 
+
+    for line in fileinput.input("cabal.project", inplace=True):
+        print(line.replace("tests: True", "tests: False"), end="")
 
     print('cabal.project :')
 
@@ -830,10 +834,10 @@ def get_node_files_using_cabal(node_rev, repository = None):
         print(f.read()) 
 
     print('*   *   *   *   *   *   *   *   *   *   *   *   *   *   *   *   ')
-    print('cabal.project.local :')
+    #print('cabal.project.local :')
 
-    with open('cabal.project.local', 'r') as f:
-        print(f.read())
+    #with open('cabal.project.local', 'r') as f:
+    #    print(f.read())
 
     execute_command("cabal update")
     execute_command("cabal build cardano-node cardano-cli")
