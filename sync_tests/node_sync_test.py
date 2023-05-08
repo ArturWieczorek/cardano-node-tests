@@ -149,7 +149,7 @@ def get_node_config_files(env, node_topology_type):
     print(f"current_directory: {current_directory}")
     print("Getting the config.json file...")
     urllib.request.urlretrieve(
-        "https://book.world.dev.cardano.org/environments/" + env + "/config.json", "config.json",
+        "https://raw.githubusercontent.com/ArturWieczorek/node-topology-files/main/" + env + "/config.json", "config.json",
     )
     print("Getting the byron-genesis.json file...")
     urllib.request.urlretrieve(
@@ -163,6 +163,10 @@ def get_node_config_files(env, node_topology_type):
     urllib.request.urlretrieve(
         "https://book.world.dev.cardano.org/environments/" + env + "/alonzo-genesis.json", "alonzo-genesis.json",
     )
+    print("Getting the conway-genesis.json file...")
+    urllib.request.urlretrieve(
+        "https://raw.githubusercontent.com/ArturWieczorek/node-topology-files/main/"  + env + "/conway-genesis.json", "conway-genesis.json",
+    )
     if node_topology_type == "p2p":
         print("Creating the topology.json file...")
         create_mainnet_p2p_topology_file("topology.json")
@@ -170,7 +174,7 @@ def get_node_config_files(env, node_topology_type):
     else:
         print("Getting the topology.json file...")
         urllib.request.urlretrieve(
-            "https://book.world.dev.cardano.org/environments/" + env + "/topology.json", "topology.json",
+            "https://raw.githubusercontent.com/ArturWieczorek/node-topology-files/main/" + env + "/topology.json", "topology.json",
             )
     print(f" - listdir current_directory: {os.listdir(current_directory)}")
 
