@@ -96,7 +96,7 @@ jobs:
         uses: 'buildkite/trigger-pipeline-action@v1.5.0'
         env:
           BUILDKITE_API_ACCESS_TOKEN: ${{ secrets.BUILDKITE_API_ACCESS_TOKEN }}
-          PIPELINE: 'input-output-hk/qa-node-sync'
+          PIPELINE: 'input-output-hk/tmp-node-test'
           BRANCH: 'node_sync_tests'
           MESSAGE: ':github: Triggered by GitHub Action'
           AWS_DB_USERNAME: ${{ secrets.AWS_DB_USERNAME }}
