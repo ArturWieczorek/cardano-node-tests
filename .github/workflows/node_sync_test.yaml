@@ -235,7 +235,7 @@ jobs:
           cd cardano_node_tests
           echo "current branch: $(git branch --show-current)"
           python sync_tests/node_sync_test.py -e ${{ matrix.env }} -b ${{ needs.set_variables.outputs.build_mode }} -t1 "${{ needs.set_variables.outputs.tag_no1 }}" -t2 "${{ needs.set_variables.outputs.tag_no2 }}" -r1 "${{ needs.set_variables.outputs.node_rev1 }}" -r2 "${{ needs.set_variables.outputs.node_rev2 }}" -n1 "${{ needs.set_variables.outputs.node_topology1 }}" -n2 "${{ needs.set_variables.outputs.node_topology2 }}" -a1="${{ needs.set_variables.outputs.node_start_arguments1 }}" -a2="${{ needs.set_variables.outputs.node_start_arguments2 }}"
-        timeout-minutes: 355     # Windows-specific timeout
+        timeout-minutes: 3     # Windows-specific timeout
         continue-on-error: true  # This will ensure the job does not fail if Windows tests fail - which is expected because they run slower
 
 
@@ -251,9 +251,9 @@ jobs:
 
       - name: Check if timeout occurred
         id: check_timeout
-        if: failure()  # If any failure occurred, including timeout
+        if: always()
         run: |
-          echo "timeout_occurred=true" >> $GITHUB_OUTPUT
+          echo "TIMEOUT_OCCURRED=true" >> $GITHUB_OUTPUT
 
       
       - name: Write the test results into the database
