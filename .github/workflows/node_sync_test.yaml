@@ -12,10 +12,11 @@ on:
         - preview
         default: mainnet
       build_mode:
-        description: Build tool - currently only nix is supported, Windows agents can only build node with cabal
+        description: Build tool - currently only nix and archives with executables built by CI are supported, Windows agents can only build node with cabal
         type: choice
         options: 
         - nix
+        - ci_archive
       tag_no1:
         description: rev_label in DB used for visuals - it is label used to distinct Microsoft BI graphs for various sync tests
         required: true
@@ -144,12 +145,12 @@ jobs:
           }'
 
   node_sync_test:
-    if: ${{ github.event_name != 'schedule' }}
+    needs: set_variables 
     strategy:
       matrix:
-        env: [preprod, preview]
-        ghc: ["9.6"]
-        cabal: ["3.12.1.0"]
+        env: ['preview', 'preprod']
+        ghc: ['9.6']
+        cabal: ['3.12.1.0']
         sys:
           - { os: windows-latest, shell: 'C:/msys64/usr/bin/bash.exe -e {0}' }
           - { os: ubuntu-latest, shell: bash }
@@ -232,7 +233,7 @@ jobs:
         run: |
           cd cardano_node_tests
           echo "current branch: $(git branch --show-current)"
-          python sync_tests/node_sync_test.py -e ${{ matrix.env }} -b ${{ github.event.inputs.build_mode }} -t1 "${{ github.event.inputs.tag_no1 }}" -t2 "${{ github.event.inputs.tag_no2 }}" -r1 "${{ github.event.inputs.node_rev1 }}" -r2 "${{ github.event.inputs.node_rev2 }}" -n1 "${{ github.event.inputs.node_topology1 }}" -n2 "${{ github.event.inputs.node_topology2 }}" -a1="${{ github.event.inputs.node_start_arguments1 }}" -a2="${{ github.event.inputs.node_start_arguments2 }}"
+          python sync_tests/node_sync_test.py -e ${{ matrix.env }} -b ${{ needs.set_variables.outputs.build_mode }} -t1 "${{ needs.set_variables.outputs.tag_no1 }}" -t2 "${{ needs.set_variables.outputs.tag_no2 }}" -r1 "${{ needs.set_variables.outputs.node_rev1 }}" -r2 "${{ needs.set_variables.outputs.node_rev2 }}" -n1 "${{ needs.set_variables.outputs.node_topology1 }}" -n2 "${{ needs.set_variables.outputs.node_topology2 }}" -a1="${{ needs.set_variables.outputs.node_start_arguments1 }}" -a2="${{ needs.set_variables.outputs.node_start_arguments2 }}"
         timeout-minutes: 355     # Windows-specific timeout
         continue-on-error: true  # This will ensure the job does not fail if Windows tests fail - which is expected because they run slower
 
@@ -244,7 +245,7 @@ jobs:
         run: |
           cd cardano_node_tests
           echo "current branch: $(git branch --show-current)"
-          python sync_tests/node_sync_test.py -e ${{ matrix.env }} -b ${{ github.event.inputs.build_mode }} -t1 "${{ github.event.inputs.tag_no1 }}" -t2 "${{ github.event.inputs.tag_no2 }}" -r1 "${{ github.event.inputs.node_rev1 }}" -r2 "${{ github.event.inputs.node_rev2 }}" -n1 "${{ github.event.inputs.node_topology1 }}" -n2 "${{ github.event.inputs.node_topology2 }}" -a1="${{ github.event.inputs.node_start_arguments1 }}" -a2="${{ github.event.inputs.node_start_arguments2 }}"
+          python sync_tests/node_sync_test.py -e ${{ matrix.env }} -b ${{ needs.set_variables.outputs.build_mode }} -t1 "${{ needs.set_variables.outputs.tag_no1 }}" -t2 "${{ needs.set_variables.outputs.tag_no2 }}" -r1 "${{ needs.set_variables.outputs.node_rev1 }}" -r2 "${{ needs.set_variables.outputs.node_rev2 }}" -n1 "${{ needs.set_variables.outputs.node_topology1 }}" -n2 "${{ needs.set_variables.outputs.node_topology2 }}" -a1="${{ needs.set_variables.outputs.node_start_arguments1 }}" -a2="${{ needs.set_variables.outputs.node_start_arguments2 }}"
 
 
       - name: Check if timeout occurred
