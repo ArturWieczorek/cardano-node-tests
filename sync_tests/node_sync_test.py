@@ -735,6 +735,7 @@ def copy_bin_files_to_current_dir(bin_dir, current_dir):
 
 
 def get_node_files(node_rev, repository=None, build_tool='nix'):
+    sys_platform = platform.system().lower()
     test_directory = Path.cwd()
     repo = None
     print_info(f"test_directory: {test_directory}")
@@ -794,7 +795,7 @@ def get_node_files(node_rev, repository=None, build_tool='nix'):
 
     elif build_tool == 'ci_archive':
         os.chdir(test_directory)
-        sys_platform = platform.system().lower()
+
         if 'windows' in sys_platform:
             sys_platform = 'win64'
         elif 'darwin' in sys_platform:
