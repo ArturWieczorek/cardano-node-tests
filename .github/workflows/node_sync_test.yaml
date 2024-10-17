@@ -251,9 +251,9 @@ jobs:
 
       - name: Check if timeout occurred
         id: check_timeout
-        if: failure()  # If any failure occurred, including timeout
+        if: always()  # If any failure occurred, including timeout
         run: |
-          echo "timeout_occurred=true" >> $GITHUB_OUTPUT
+          echo "TIMEOUT_OCCURRED=true" >> $GITHUB_OUTPUT
 
       
       - name: Write the test results into the database
