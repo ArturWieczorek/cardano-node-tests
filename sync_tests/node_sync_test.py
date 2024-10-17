@@ -819,14 +819,16 @@ def get_node_files(node_rev, repository=None, build_tool='nix'):
         # List the contents of the current working directory
         print(f"Current working directory contents: {os.listdir(current_dir)}")
 
-        # Unpack the archive
         unpack_archive(archive_path)
         print("Unpacking completed.")
         copy_bin_files_to_current_dir(bin_dir, current_dir)
-        if sys_platform == 'win64':
-            os.rename('cardano-node.exe', 'cardano-node')
-            os.rename('cardano-cli.exe', 'cardano-cli')
 
+    global NODE, CLI
+    node_executable = 'cardano-node.exe' if 'windows' in sys_platform else 'cardano-node'
+    cli_executable = 'cardano-cli.exe' if 'windows' in sys_platform else 'cardano-cli'
+
+    NODE = os.path.abspath(os.path.join(current_dir, node_executable))
+    CLI = os.path.abspath(os.path.join(current_dir, cli_executable))
 
     os.chdir(test_directory)
     subprocess.check_call(['chmod', '+x', NODE])
