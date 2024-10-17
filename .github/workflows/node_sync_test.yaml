@@ -17,6 +17,7 @@ on:
         options: 
         - nix
         - ci_archive
+        default: ci_archive
       tag_no1:
         description: rev_label in DB used for visuals - it is label used to distinct Microsoft BI graphs for various sync tests
         required: true
@@ -24,7 +25,7 @@ on:
       node_rev1:
         description: Desired cardano-node revision used for initial sync
         required: true
-        default: "tags/9.2.1"
+        default: "9.2.1"
       node_topology1:
         description: Desired cardano-node topology type used for initial sync
         type: choice
