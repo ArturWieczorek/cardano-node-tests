@@ -59,14 +59,18 @@ on:
         required: false
         default: "None"
 
-
   schedule:
-    - cron: '0 23 * * */1'
+    - cron: '*/10 * * * *'
+    #- cron: '0 23 * * */1'
+
+
+run-name: Node sync tests ${{ github.event.inputs.environment }} ${{ github.event.inputs.tag_no1 }} ${{ github.event.inputs.build_mode }}
 
 jobs:
 
   set_variables:
     runs-on: ubuntu-latest
+    name: Set variable
     outputs:
       env: ${{ steps.set_vars.outputs.env }}
       build_mode: ${{ steps.set_vars.outputs.build_mode }}
@@ -110,8 +114,9 @@ jobs:
           fi
 
 
-  node_sync_test_buildkite_mainnet:
+  node_sync_test_buildkite:
     runs-on: ubuntu-latest
+    name: Node sync test - ${{ needs.set_variables.outputs.env }} | Buildkite Agent
     needs: set_variables 
     steps:
       - name: trigger the Buildkite pipeline - run sync tests on Mainnet
@@ -149,7 +154,7 @@ jobs:
     needs: set_variables 
     strategy:
       matrix:
-        env: ['preview', 'preprod']
+        #env: ['preview', 'preprod']
         ghc: ['9.6']
         cabal: ['3.12.1.0']
         sys:
@@ -160,14 +165,18 @@ jobs:
           - node_sync_tests
       fail-fast: false
     runs-on: ${{ matrix.sys.os }}
+    name: Node sync test - ${{ github.event_name == 'schedule' && 'preprod' || needs.set_variables.outputs.env }} | OS ${{ matrix.sys.os }} | GHC ${{ matrix.ghc }} | Cabal ${{ matrix.cabal }}
     timeout-minutes: 359
     outputs:
       TIMEOUT_OCCURRED: ${{ steps.check_timeout.outputs.TIMEOUT_OCCURRED }}
 
     env:
+      ADJUSTED_ENV: ${{ github.event_name == 'schedule' && 'preprod' || needs.set_variables.outputs.env }}
       TIMEOUT_OCCURRED: false
       MSYS2_PATH_TYPE: inherit
       MSYSTEM: MINGW64
+
+    if: ${{ !(github.event_name == 'workflow_dispatch' && needs.set_variables.outputs.env == 'mainnet') }}
 
     steps:
     
@@ -232,10 +241,11 @@ jobs:
         if: runner.os == 'Windows'
         env:
           BLOCKFROST_API_KEY: ${{ secrets.BLOCKFROST_API_KEY }}
+          CUSTOM_ENV: ${{ env.ADJUSTED_ENV }}
         run: |
           cd cardano_node_tests
           echo "current branch: $(git branch --show-current)"
-          python sync_tests/node_sync_test.py -e ${{ matrix.env }} -b ${{ needs.set_variables.outputs.build_mode }} -t1 "${{ needs.set_variables.outputs.tag_no1 }}" -t2 "${{ needs.set_variables.outputs.tag_no2 }}" -r1 "${{ needs.set_variables.outputs.node_rev1 }}" -r2 "${{ needs.set_variables.outputs.node_rev2 }}" -n1 "${{ needs.set_variables.outputs.node_topology1 }}" -n2 "${{ needs.set_variables.outputs.node_topology2 }}" -a1="${{ needs.set_variables.outputs.node_start_arguments1 }}" -a2="${{ needs.set_variables.outputs.node_start_arguments2 }}"
+          python sync_tests/node_sync_test.py -e ${{ env.CUSTOM_ENV }} -b ${{ needs.set_variables.outputs.build_mode }} -t1 "${{ needs.set_variables.outputs.tag_no1 }}" -t2 "${{ needs.set_variables.outputs.tag_no2 }}" -r1 "${{ needs.set_variables.outputs.node_rev1 }}" -r2 "${{ needs.set_variables.outputs.node_rev2 }}" -n1 "${{ needs.set_variables.outputs.node_topology1 }}" -n2 "${{ needs.set_variables.outputs.node_topology2 }}" -a1="${{ needs.set_variables.outputs.node_start_arguments1 }}" -a2="${{ needs.set_variables.outputs.node_start_arguments2 }}"
         timeout-minutes: 355     # Windows-specific timeout
         continue-on-error: true  # This will ensure the job does not fail if Windows tests fail - which is expected because they run slower
 
@@ -244,10 +254,11 @@ jobs:
         if: runner.os != 'Windows'
         env:
           BLOCKFROST_API_KEY: ${{ secrets.BLOCKFROST_API_KEY }}
+          CUSTOM_ENV: ${{ env.ADJUSTED_ENV }}
         run: |
           cd cardano_node_tests
           echo "current branch: $(git branch --show-current)"
-          python sync_tests/node_sync_test.py -e ${{ matrix.env }} -b ${{ needs.set_variables.outputs.build_mode }} -t1 "${{ needs.set_variables.outputs.tag_no1 }}" -t2 "${{ needs.set_variables.outputs.tag_no2 }}" -r1 "${{ needs.set_variables.outputs.node_rev1 }}" -r2 "${{ needs.set_variables.outputs.node_rev2 }}" -n1 "${{ needs.set_variables.outputs.node_topology1 }}" -n2 "${{ needs.set_variables.outputs.node_topology2 }}" -a1="${{ needs.set_variables.outputs.node_start_arguments1 }}" -a2="${{ needs.set_variables.outputs.node_start_arguments2 }}"
+          python sync_tests/node_sync_test.py -e ${{ env.CUSTOM_ENV }} -b ${{ needs.set_variables.outputs.build_mode }} -t1 "${{ needs.set_variables.outputs.tag_no1 }}" -t2 "${{ needs.set_variables.outputs.tag_no2 }}" -r1 "${{ needs.set_variables.outputs.node_rev1 }}" -r2 "${{ needs.set_variables.outputs.node_rev2 }}" -n1 "${{ needs.set_variables.outputs.node_topology1 }}" -n2 "${{ needs.set_variables.outputs.node_topology2 }}" -a1="${{ needs.set_variables.outputs.node_start_arguments1 }}" -a2="${{ needs.set_variables.outputs.node_start_arguments2 }}"
 
 
       - name: Check if timeout occurred
