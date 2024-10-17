@@ -824,14 +824,14 @@ def get_node_files(node_rev, repository=None, build_tool='nix'):
         print("Unpacking completed.")
         copy_bin_files_to_current_dir(bin_dir, current_dir)
 
+    os.chdir(test_directory)
+
     global NODE, CLI
     node_executable = 'cardano-node.exe' if 'windows' in sys_platform else 'cardano-node'
     cli_executable = 'cardano-cli.exe' if 'windows' in sys_platform else 'cardano-cli'
-
-    NODE = os.path.abspath(os.path.join(current_dir, node_executable))
-    CLI = os.path.abspath(os.path.join(current_dir, cli_executable))
-
-    os.chdir(test_directory)
+    NODE = os.path.abspath(os.path.join(test_directory, node_executable))
+    CLI = os.path.abspath(os.path.join(test_directory, cli_executable))
+    
     subprocess.check_call(['chmod', '+x', NODE])
     subprocess.check_call(['chmod', '+x', CLI])
     print_info("files permissions inside test folder:")
