@@ -61,7 +61,7 @@ on:
 
 
   schedule:
-    - cron: '*/9 * * * *'
+    - cron: '0 23 * * */1'
 
 jobs:
 
@@ -162,7 +162,7 @@ jobs:
     runs-on: ${{ matrix.sys.os }}
     timeout-minutes: 359
     outputs:
-      TIMEOUT_OCCURRED: ${{ steps.check_timeout.outputs.timeout_occurred }}
+      TIMEOUT_OCCURRED: ${{ steps.check_timeout.outputs.TIMEOUT_OCCURRED }}
 
     env:
       TIMEOUT_OCCURRED: false
@@ -228,6 +228,7 @@ jobs:
 
 
       - name: Run sync test on Windows
+        id: run_sync_test_on_windows
         if: runner.os == 'Windows'
         env:
           BLOCKFROST_API_KEY: ${{ secrets.BLOCKFROST_API_KEY }}
@@ -235,7 +236,7 @@ jobs:
           cd cardano_node_tests
           echo "current branch: $(git branch --show-current)"
           python sync_tests/node_sync_test.py -e ${{ matrix.env }} -b ${{ needs.set_variables.outputs.build_mode }} -t1 "${{ needs.set_variables.outputs.tag_no1 }}" -t2 "${{ needs.set_variables.outputs.tag_no2 }}" -r1 "${{ needs.set_variables.outputs.node_rev1 }}" -r2 "${{ needs.set_variables.outputs.node_rev2 }}" -n1 "${{ needs.set_variables.outputs.node_topology1 }}" -n2 "${{ needs.set_variables.outputs.node_topology2 }}" -a1="${{ needs.set_variables.outputs.node_start_arguments1 }}" -a2="${{ needs.set_variables.outputs.node_start_arguments2 }}"
-        timeout-minutes: 3     # Windows-specific timeout
+        timeout-minutes: 355     # Windows-specific timeout
         continue-on-error: true  # This will ensure the job does not fail if Windows tests fail - which is expected because they run slower
 
 
@@ -252,11 +253,22 @@ jobs:
       - name: Check if timeout occurred
         id: check_timeout
         if: always()
+        shell: bash
         run: |
-          echo "TIMEOUT_OCCURRED=true" >> $GITHUB_OUTPUT
+          if [[ ${{ job.status }} == "failure" ]] || [[ ${{ job.status }} == "success" && ${{ steps.run_sync_test_on_windows.outcome }} == "failure" ]]; then
+            echo "TIMEOUT_OCCURRED=true" >> $GITHUB_OUTPUT
+          else
+            echo "TIMEOUT_OCCURRED=false" >> $GITHUB_OUTPUT
+          fi
 
       
+      - name: Print timeout status
+        run: |
+          echo "Timeout occurred: ${{ steps.check_timeout.outputs.TIMEOUT_OCCURRED }}"
+
+
       - name: Write the test results into the database
+        if: steps.check_timeout.outputs.TIMEOUT_OCCURRED == 'false'
         env:
           AWS_DB_USERNAME: ${{ secrets.AWS_DB_USERNAME }}
           AWS_DB_PASS: ${{ secrets.AWS_DB_PASS }}
@@ -274,6 +286,7 @@ jobs:
         run: |
           cd cardano_node_tests
           cp logfile.log node.log
+        continue-on-error: true
 
 
       - name: Generate artifacts
@@ -295,4 +308,4 @@ jobs:
     steps:
       - name: Handle Windows test timeout gracefully
         run: |
-          echo "Windows test timed out but not failing the workflow."
+          echo "Windows test timed out but not failing the workflow as this is expected behavior in case of Windows."
