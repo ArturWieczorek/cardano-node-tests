@@ -703,17 +703,18 @@ def copy_node_executables(src_location, dst_location, build_mode):
             exit(1)
         time.sleep(5)
 
+    # Used only for Windows
     if build_mode == 'cabal':
         node_binary_location = get_node_executable_path_built_with_cabal()
         cli_binary_location = get_cli_executable_path_built_with_cabal()
 
         try:
-            shutil.copy2(node_binary_location, Path(dst_location) / 'cardano-node')
+            shutil.copy2(node_binary_location, Path(dst_location) / 'cardano-node.exe')
         except Exception as e:
             print_error(f" !!! ERROR - could not copy the cardano-cli file - {e}")
 
         try:
-            shutil.copy2(cli_binary_location, Path(dst_location) / 'cardano-cli')
+            shutil.copy2(cli_binary_location, Path(dst_location) / 'cardano-cli.exe')
         except Exception as e:
             print_error(f" !!! ERROR - could not copy the cardano-cli file - {e}")
         time.sleep(5)
