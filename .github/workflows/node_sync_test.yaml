@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: Environment on which Buildkite agent will run tests
+        description: Environment on which Buildkite and GH agents will run tests
         type: choice
         options: 
         - mainnet
@@ -12,18 +12,20 @@ on:
         - preview
         default: mainnet
       build_mode:
-        description: Build tool - currently only nix and archives with executables built by CI are supported, Windows agents can only build node with cabal
+        description: Build tool - currently only nix and ci_archive built by Hydra CI are supported. Windows agents will only build node with cabal so even if nix is selected it will default to cabal.
         type: choice
         options: 
         - nix
         - ci_archive
         default: ci_archive
       tag_no1:
-        description: rev_label in DB used for visuals - it is label used to distinct Microsoft BI graphs for various sync tests
+        description: rev_label in DB used for visuals only, does not affect test logic - it is label used to distinct Microsoft BI graphs for various sync tests
         required: true
         default: "9.2.1-bootstrap-peers"
       node_rev1:
-        description: Desired cardano-node revision used for initial sync
+        description: Desired cardano-node revision used for initial sync. There are 2 groups of fields that have the same description. If first group that ends on "extra arguments" is specified then 
+                     node will be fully synced for those parameters and test will end. After first occurence of "extra arguments" workflow form repeats the same input fields for second group.
+                     If fields from second group are also specified then node will fully sync with parameters from "Group 1" then stop, perform an upgrade for params specified in "Group 2" and check if it can start itself to test upgrade scenario
         required: true
         default: "9.2.1"
       node_topology1:
@@ -39,15 +41,15 @@ on:
         required: false
         default: "None"
       tag_no2:
-        description: Use only if you plan to test node upgrade from version specified above to this one - it is label used to distinct Microsoft BI graphs for various sync tests
+        description: Group 2 - Use only if you plan to test node upgrade - it is label used to distinct Microsoft BI graphs for various sync tests
         required: true
         default: "None"
       node_rev2:
-        description: Use only if you plan to test node upgrade - desired cardano-node revision used for final sync for upgrade test
+        description: Group 2 - Use only if you plan to test node upgrade - cardano-node revision used for final sync for upgrade test
         required: true
         default: "None"
       node_topology2:
-        description: Use only if you plan to test node upgrade - desired cardano-node topology type used for final sync for upgrade test
+        description: Group 2 - Use only if you plan to test node upgrade - cardano-node topology type used for final sync for upgrade test
         type: choice
         options:
         - legacy
@@ -55,13 +57,13 @@ on:
         - bootstrap-peers
         default: bootstrap-peers
       node_start_arguments2:
-        description: Use only if you plan to test node upgrade - extra arguments to be used when starting the node using tag_no2 (--a1 --a2 21).
+        description: Group 2 - Use only if you plan to test node upgrade - extra arguments to be used when starting the node using tag_no2 (--a1 --a2 21).
         required: false
         default: "None"
 
   schedule:
     - cron: '*/10 * * * *'
-    #- cron: '0 23 * * */1'
+    #- cron: '30 23 * * 5' # Every Friday at 23:30
 
 
 run-name: Node sync tests ${{ github.event.inputs.environment }} ${{ github.event.inputs.tag_no1 }} ${{ github.event.inputs.build_mode }}
@@ -154,7 +156,6 @@ jobs:
     needs: set_variables 
     strategy:
       matrix:
-        #env: ['preview', 'preprod']
         ghc: ['9.6']
         cabal: ['3.12.1.0']
         sys:
@@ -168,9 +169,11 @@ jobs:
     name: Node sync test - ${{ github.event_name == 'schedule' && 'preprod' || needs.set_variables.outputs.env }} | OS ${{ matrix.sys.os }} | GHC ${{ matrix.ghc }} | Cabal ${{ matrix.cabal }}
     timeout-minutes: 359
     outputs:
+      OS_NAME: ${{ matrix.sys.os }}
       TIMEOUT_OCCURRED: ${{ steps.check_timeout.outputs.TIMEOUT_OCCURRED }}
 
     env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ADJUSTED_ENV: ${{ github.event_name == 'schedule' && 'preprod' || needs.set_variables.outputs.env }}
       TIMEOUT_OCCURRED: false
       MSYS2_PATH_TYPE: inherit
@@ -241,11 +244,10 @@ jobs:
         if: runner.os == 'Windows'
         env:
           BLOCKFROST_API_KEY: ${{ secrets.BLOCKFROST_API_KEY }}
-          CUSTOM_ENV: ${{ env.ADJUSTED_ENV }}
         run: |
           cd cardano_node_tests
           echo "current branch: $(git branch --show-current)"
-          python sync_tests/node_sync_test.py -e ${{ env.CUSTOM_ENV }} -b ${{ needs.set_variables.outputs.build_mode }} -t1 "${{ needs.set_variables.outputs.tag_no1 }}" -t2 "${{ needs.set_variables.outputs.tag_no2 }}" -r1 "${{ needs.set_variables.outputs.node_rev1 }}" -r2 "${{ needs.set_variables.outputs.node_rev2 }}" -n1 "${{ needs.set_variables.outputs.node_topology1 }}" -n2 "${{ needs.set_variables.outputs.node_topology2 }}" -a1="${{ needs.set_variables.outputs.node_start_arguments1 }}" -a2="${{ needs.set_variables.outputs.node_start_arguments2 }}"
+          python sync_tests/node_sync_test.py -e ${{ env.ADJUSTED_ENV }} -b ${{ needs.set_variables.outputs.build_mode }} -t1 "${{ needs.set_variables.outputs.tag_no1 }}" -t2 "${{ needs.set_variables.outputs.tag_no2 }}" -r1 "${{ needs.set_variables.outputs.node_rev1 }}" -r2 "${{ needs.set_variables.outputs.node_rev2 }}" -n1 "${{ needs.set_variables.outputs.node_topology1 }}" -n2 "${{ needs.set_variables.outputs.node_topology2 }}" -a1="${{ needs.set_variables.outputs.node_start_arguments1 }}" -a2="${{ needs.set_variables.outputs.node_start_arguments2 }}"
         timeout-minutes: 355     # Windows-specific timeout
         continue-on-error: true  # This will ensure the job does not fail if Windows tests fail - which is expected because they run slower
 
@@ -254,11 +256,10 @@ jobs:
         if: runner.os != 'Windows'
         env:
           BLOCKFROST_API_KEY: ${{ secrets.BLOCKFROST_API_KEY }}
-          CUSTOM_ENV: ${{ env.ADJUSTED_ENV }}
         run: |
           cd cardano_node_tests
           echo "current branch: $(git branch --show-current)"
-          python sync_tests/node_sync_test.py -e ${{ env.CUSTOM_ENV }} -b ${{ needs.set_variables.outputs.build_mode }} -t1 "${{ needs.set_variables.outputs.tag_no1 }}" -t2 "${{ needs.set_variables.outputs.tag_no2 }}" -r1 "${{ needs.set_variables.outputs.node_rev1 }}" -r2 "${{ needs.set_variables.outputs.node_rev2 }}" -n1 "${{ needs.set_variables.outputs.node_topology1 }}" -n2 "${{ needs.set_variables.outputs.node_topology2 }}" -a1="${{ needs.set_variables.outputs.node_start_arguments1 }}" -a2="${{ needs.set_variables.outputs.node_start_arguments2 }}"
+          python sync_tests/node_sync_test.py -e ${{ env.ADJUSTED_ENV }} -b ${{ needs.set_variables.outputs.build_mode }} -t1 "${{ needs.set_variables.outputs.tag_no1 }}" -t2 "${{ needs.set_variables.outputs.tag_no2 }}" -r1 "${{ needs.set_variables.outputs.node_rev1 }}" -r2 "${{ needs.set_variables.outputs.node_rev2 }}" -n1 "${{ needs.set_variables.outputs.node_topology1 }}" -n2 "${{ needs.set_variables.outputs.node_topology2 }}" -a1="${{ needs.set_variables.outputs.node_start_arguments1 }}" -a2="${{ needs.set_variables.outputs.node_start_arguments2 }}"
 
 
       - name: Check if timeout occurred
@@ -281,7 +282,6 @@ jobs:
       - name: Write the test results into the database
         if: steps.check_timeout.outputs.TIMEOUT_OCCURRED == 'false'
         env:
-          CUSTOM_ENV: ${{ env.ADJUSTED_ENV }}
           AWS_DB_USERNAME: ${{ secrets.AWS_DB_USERNAME }}
           AWS_DB_PASS: ${{ secrets.AWS_DB_PASS }}
           AWS_DB_NAME: ${{ secrets.AWS_DB_NAME }}
@@ -290,7 +290,7 @@ jobs:
         run: |
           cd cardano_node_tests
           echo "current branch: $(git branch --show-current)"
-          python sync_tests/node_write_sync_values_to_db.py -e ${{ env.CUSTOM_ENV }}
+          python sync_tests/node_write_sync_values_to_db.py -e ${{ env.ADJUSTED_ENV }}
 
       
       - name: Prepare node logs
@@ -305,7 +305,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: node_logs_${{ matrix.env }}_${{ matrix.sys.os }}
+          name: node_logs_${{ env.ADJUSTED_ENV }}_${{ matrix.sys.os }}
           path: |
             cardano_node_tests/node.log
             cardano_node_tests/sync_results.json
@@ -315,8 +315,9 @@ jobs:
 
   finalize:
     runs-on: ubuntu-latest
+    name: Windows timeout checker
     needs: [node_sync_test]  # Ensure this runs after all matrix jobs
-    if: ${{ needs.node_sync_test.outputs.TIMEOUT_OCCURRED == 'true' }}  # Run only if timeout occurred
+    if: ${{ needs.node_sync_test.outputs.TIMEOUT_OCCURRED == 'true' && needs.node_sync_test.outputs.OS_NAME == 'windows-latest' }}  # Run only if timeout occurred on Windows
     steps:
       - name: Handle Windows test timeout gracefully
         run: |
