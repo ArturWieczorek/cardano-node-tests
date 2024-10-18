@@ -281,6 +281,7 @@ jobs:
       - name: Write the test results into the database
         if: steps.check_timeout.outputs.TIMEOUT_OCCURRED == 'false'
         env:
+          CUSTOM_ENV: ${{ env.ADJUSTED_ENV }}
           AWS_DB_USERNAME: ${{ secrets.AWS_DB_USERNAME }}
           AWS_DB_PASS: ${{ secrets.AWS_DB_PASS }}
           AWS_DB_NAME: ${{ secrets.AWS_DB_NAME }}
@@ -289,7 +290,7 @@ jobs:
         run: |
           cd cardano_node_tests
           echo "current branch: $(git branch --show-current)"
-          python sync_tests/node_write_sync_values_to_db.py -e ${{ matrix.env }}
+          python sync_tests/node_write_sync_values_to_db.py -e ${{ env.CUSTOM_ENV }}
 
       
       - name: Prepare node logs
