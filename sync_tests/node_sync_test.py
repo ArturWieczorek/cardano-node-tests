@@ -83,7 +83,9 @@ def get_node_assets_url(node_version, platform):
     node_release_url = f"https://api.github.com/repos/IntersectMBO/cardano-node/releases/tags/{node_version}"
 
     # Fetch release info from GitHub API
-    response = requests.get(node_release_url)
+    github_token = os.getenv('GITHUB_TOKEN')
+    headers = {"Authorization": f"token {github_token}"}
+    response = requests.get(node_release_url, headers=headers)
     response.raise_for_status()  # Ensure we got a valid response
 
     assets = response.json().get('assets', [])
