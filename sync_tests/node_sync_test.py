@@ -90,8 +90,12 @@ def get_node_assets_url(node_version, platform):
 
     assets = response.json().get('assets', [])
 
+    # Handle pre-release suffix in the asset name if present
+    base_version = node_version.split('-')[0]  # Removes any suffix (e.g., "10.1.1" from "10.1.1-pre")
+    asset_name = f"cardano-node-{base_version}-{platform}"
+
     # Select the asset based on the platform
-    asset_name = f"cardano-node-{node_version}-{platform}"
+    #asset_name = f"cardano-node-{node_version}-{platform}"
     for asset in assets:
         if asset['name'].startswith(asset_name):
             return asset['browser_download_url'], asset['name']
