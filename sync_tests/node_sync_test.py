@@ -299,7 +299,7 @@ def wait_for_node_to_start(timeout_minutes=20):
 
 
 def get_current_tip(timeout_minutes=10):
-    cmd = CLI + ' query tip ' + get_testnet_value()
+    cmd = CLI + ' latest query tip ' + get_testnet_value()
 
     for i in range(timeout_minutes):
         try:
