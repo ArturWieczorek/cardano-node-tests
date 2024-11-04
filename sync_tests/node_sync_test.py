@@ -82,9 +82,18 @@ def git_get_last_closed_pr_cardano_node():
 def get_node_assets_url(node_version, platform):
     node_release_url = f"https://api.github.com/repos/IntersectMBO/cardano-node/releases/tags/{node_version}"
 
+    # Determine if we're running in Buildkite
+    is_buildkite = os.getenv('BUILDKITE') is not None  # Check for the Buildkite environment variable
+
+    headers = {}
+    if not is_buildkite:
+        github_token = os.getenv('GITHUB_TOKEN')
+        headers = {"Authorization": f"token {github_token}"}
+
+
     # Fetch release info from GitHub API
-    github_token = os.getenv('GITHUB_TOKEN')
-    headers = {"Authorization": f"token {github_token}"}
+    #github_token = os.getenv('GITHUB_TOKEN')
+    #headers = {"Authorization": f"token {github_token}"}
     response = requests.get(node_release_url, headers=headers)
     response.raise_for_status()  # Ensure we got a valid response
 
