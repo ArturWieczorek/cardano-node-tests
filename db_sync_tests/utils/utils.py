@@ -234,7 +234,9 @@ def print_file(file, number_of_lines = 0):
             if index < number_of_lines + 1:
                 print(line, flush=True)
             else: break
-    else: print(contents, flush=True)
+    else: 
+        print(contents, flush=True)
+        return contents
 
 
 def get_process_info(proc_name):
@@ -481,11 +483,24 @@ def get_node_archive_url(node_pr):
 
 def get_node_config_files(env):
     base_url = "https://book.play.dev.cardano.org/environments/"
-    urllib.request.urlretrieve(base_url + env + "/config.json", env + "-config.json",)
-    urllib.request.urlretrieve(base_url + env + "/byron-genesis.json", "byron-genesis.json",)
-    urllib.request.urlretrieve(base_url + env + "/shelley-genesis.json", "shelley-genesis.json",)
-    urllib.request.urlretrieve(base_url + env + "/alonzo-genesis.json", "alonzo-genesis.json",)
-    urllib.request.urlretrieve(base_url + env + "/topology.json", env + "-topology.json",)
+    filenames = [
+        (base_url + env + "/config.json", f"{env}-config.json"),
+        (base_url + env + "/byron-genesis.json", "byron-genesis.json"),
+        (base_url + env + "/shelley-genesis.json", "shelley-genesis.json"),
+        (base_url + env + "/alonzo-genesis.json", "alonzo-genesis.json"),
+        (base_url + env + "/conway-genesis.json", "conway-genesis.json"),
+        (base_url + env + "/topology.json", f"{env}-topology.json")
+    ]
+
+    for url, filename in filenames:
+        try:
+            urllib.request.urlretrieve(url, filename)
+            # Check if the file exists after download
+            if not os.path.isfile(filename):
+                raise FileNotFoundError(f"Downloaded file '{filename}' does not exist.")
+        except Exception as e:
+            print(f"Error downloading {url}: {e}")
+            exit(1)
 
 
 def copy_node_executables(build_method="nix"):
@@ -689,7 +704,7 @@ def start_node_in_cwd(env):
         p = subprocess.Popen(cmd.split(" "), stdout=logfile, stderr=logfile)
         print("waiting for db folder to be created")
         counter = 0
-        timeout_counter = 2 * ONE_MINUTE
+        timeout_counter = 1 * ONE_MINUTE
         node_db_dir = current_directory + "/db"
         while not os.path.isdir(node_db_dir):
             time.sleep(1)
@@ -697,6 +712,8 @@ def start_node_in_cwd(env):
             if counter > timeout_counter:
                 print(
                     f"ERROR: waited {timeout_counter} seconds and the DB folder was not created yet")
+                node_startup_error = print_file(NODE_LOG)
+                print_color_log(sh_colors.FAIL, f"Error: {node_startup_error}")
                 exit(1)
 
         print(f"DB folder was created after {counter} seconds")
