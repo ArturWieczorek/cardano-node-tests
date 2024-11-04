@@ -90,10 +90,7 @@ def get_node_assets_url(node_version, platform):
         github_token = os.getenv('GITHUB_TOKEN')
         headers = {"Authorization": f"token {github_token}"}
 
-
     # Fetch release info from GitHub API
-    #github_token = os.getenv('GITHUB_TOKEN')
-    #headers = {"Authorization": f"token {github_token}"}
     response = requests.get(node_release_url, headers=headers)
     response.raise_for_status()  # Ensure we got a valid response
 
@@ -104,7 +101,6 @@ def get_node_assets_url(node_version, platform):
     asset_name = f"cardano-node-{base_version}-{platform}"
 
     # Select the asset based on the platform
-    #asset_name = f"cardano-node-{node_version}-{platform}"
     for asset in assets:
         if asset['name'].startswith(asset_name):
             return asset['browser_download_url'], asset['name']
