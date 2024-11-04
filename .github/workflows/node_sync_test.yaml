@@ -125,7 +125,8 @@ jobs:
           AWS_DB_PASS: ${{ secrets.AWS_DB_PASS }}
           AWS_DB_NAME: ${{ secrets.AWS_DB_NAME }}
           AWS_DB_HOSTNAME: ${{ secrets.AWS_DB_HOSTNAME }}
-          BLOCKFROST_API_KEY: ${{ secrets.BLOCKFROST_API_KEY }}         
+          BLOCKFROST_API_KEY: ${{ secrets.BLOCKFROST_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
           BUILD_ENV_VARS: '{
           "env":"${{ needs.set_variables.outputs.env }}",
           "build_mode":"${{ needs.set_variables.outputs.build_mode }}",
@@ -139,6 +140,7 @@ jobs:
           "node_start_arguments2":"${{ needs.set_variables.outputs.node_start_arguments2 }}",
           
           "BLOCKFROST_API_KEY":"${{ secrets.BLOCKFROST_API_KEY }}",
+          "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}",
           "AWS_DB_USERNAME":"${{ secrets.AWS_DB_USERNAME }}",
           "AWS_DB_PASS":"${{ secrets.AWS_DB_PASS }}",
           "AWS_DB_NAME":"${{ secrets.AWS_DB_NAME }}",
