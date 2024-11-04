@@ -480,7 +480,7 @@ def get_node_archive_url(node_pr):
 
 
 def get_node_config_files(env):
-    base_url = "https://book.world.dev.cardano.org/environments/"
+    base_url = "https://book.play.dev.cardano.org/environments/"
     urllib.request.urlretrieve(base_url + env + "/config.json", env + "-config.json",)
     urllib.request.urlretrieve(base_url + env + "/byron-genesis.json", "byron-genesis.json",)
     urllib.request.urlretrieve(base_url + env + "/shelley-genesis.json", "shelley-genesis.json",)
@@ -689,7 +689,7 @@ def start_node_in_cwd(env):
         p = subprocess.Popen(cmd.split(" "), stdout=logfile, stderr=logfile)
         print("waiting for db folder to be created")
         counter = 0
-        timeout_counter = 25 * ONE_MINUTE
+        timeout_counter = 2 * ONE_MINUTE
         node_db_dir = current_directory + "/db"
         while not os.path.isdir(node_db_dir):
             time.sleep(1)
