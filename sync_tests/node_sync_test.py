@@ -85,7 +85,8 @@ def get_node_assets_url(node_version, platform):
     # Fetch release info from GitHub API
     github_token = os.getenv('GITHUB_TOKEN')
     headers = {"Authorization": f"token {github_token}"}
-    response = requests.get(node_release_url, headers=headers)
+    #response = requests.get(node_release_url, headers=headers)
+    response = requests.get(node_release_url,)
     response.raise_for_status()  # Ensure we got a valid response
 
     assets = response.json().get('assets', [])
