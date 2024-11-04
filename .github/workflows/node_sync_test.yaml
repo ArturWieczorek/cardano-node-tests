@@ -140,7 +140,7 @@ jobs:
           "node_start_arguments2":"${{ needs.set_variables.outputs.node_start_arguments2 }}",
           
           "BLOCKFROST_API_KEY":"${{ secrets.BLOCKFROST_API_KEY }}",
-          "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}",
+          "GITHUB_TOKEN": "${{ secrets.GITHUB_TOKEN }}",
           "AWS_DB_USERNAME":"${{ secrets.AWS_DB_USERNAME }}",
           "AWS_DB_PASS":"${{ secrets.AWS_DB_PASS }}",
           "AWS_DB_NAME":"${{ secrets.AWS_DB_NAME }}",
