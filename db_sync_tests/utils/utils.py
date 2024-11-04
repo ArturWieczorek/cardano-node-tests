@@ -594,7 +594,7 @@ def set_node_socket_path_env_var_in_cwd():
 def get_node_tip(env, timeout_minutes=20):
     current_directory = os.getcwd()
     os.chdir(ROOT_TEST_PATH / "cardano-node")
-    cmd = "./_cardano-cli query tip " + get_testnet_value(env)
+    cmd = "./_cardano-cli latest query tip " + get_testnet_value(env)
 
     for i in range(timeout_minutes):
         try:
