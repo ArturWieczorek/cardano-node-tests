@@ -80,7 +80,7 @@
               nativeBuildInputs = with pkgs; with python39Packages; [ python39Full virtualenv pip matplotlib pandas requests xmltodict psutil GitPython pymysql ];
             };
             postgres = pkgs.mkShell {
-              nativeBuildInputs = with pkgs; [ glibcLocales postgresql lsof procps ];
+              nativeBuildInputs = with pkgs; [ glibcLocales postgresql_14 lsof procps ];
             };
             default = (
               cardano-node.devShells.${system}.devops or (
