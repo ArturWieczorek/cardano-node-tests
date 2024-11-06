@@ -967,26 +967,58 @@ def create_db_sync_snapshot_stage_1(env):
             )
         )
 
+#def create_db_sync_snapshot_stage_2(stage_2_cmd, env):
+#    os.chdir(ROOT_TEST_PATH)
+#    os.chdir(Path.cwd() / 'cardano-db-sync')
+#    export_env_var("PGPASSFILE", f"config/pgpass-{env}")
+#
+#    cmd = f"{stage_2_cmd}"
+#    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
+#
+#    try:
+#        outs, errs = p.communicate(timeout=43200) # 12 hours
+#        print(f"Snapshot Creation - Stage 2 result: {outs}")
+#        if errs:
+#            print(f"Warnings or Errors: {errs}")
+#        return outs.split("\n")[3].lstrip()
+#    except subprocess.CalledProcessError as e:
+#        raise RuntimeError(
+#            "command '{}' return with error (code {}): {}".format(
+#                e.cmd, e.returncode, " ".join(str(e.output).split())
+#            )
+#        )
+
 def create_db_sync_snapshot_stage_2(stage_2_cmd, env):
-    os.chdir(ROOT_TEST_PATH)
-    os.chdir(Path.cwd() / 'cardano-db-sync')
+    os.chdir(ROOT_TEST_PATH / 'cardano-db-sync')
     export_env_var("PGPASSFILE", f"config/pgpass-{env}")
-
-    cmd = f"{stage_2_cmd}"
-    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
-
+    
     try:
-        outs, errs = p.communicate(timeout=43200) # 12 hours
-        print(f"Snapshot Creation - Stage 2 result: {outs}")
-        if errs:
-            print(f"Warnings or Errors: {errs}")
-        return outs.split("\n")[3].lstrip()
-    except subprocess.CalledProcessError as e:
-        raise RuntimeError(
-            "command '{}' return with error (code {}): {}".format(
-                e.cmd, e.returncode, " ".join(str(e.output).split())
-            )
+        # Running the command and capturing output and error
+        result = subprocess.run(
+            stage_2_cmd, 
+            shell=True, 
+            capture_output=True, 
+            text=True, 
+            timeout=43200  # 12 hours
         )
+        
+        print(f"Snapshot Creation - Stage 2 Output:\n{result.stdout}")
+        if result.stderr:
+            print(f"Warnings or Errors:\n{result.stderr}")
+
+        # Extracting the snapshot path from the last line mentioning 'Created'
+        snapshot_line = next(
+            (line for line in result.stdout.splitlines() if line.startswith("Created")), 
+            "Snapshot creation output not found."
+        )
+        snapshot_path = snapshot_line.split()[1] if "Created" in snapshot_line else "Snapshot path unknown"
+        
+        return snapshot_path
+
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("Snapshot creation timed out.")
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Command '{e.cmd}' failed with error: {e.stderr}")
 
         
 def get_db_sync_tip(env):
